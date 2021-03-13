@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+}
+
+group 'com.java'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+
+    //libgdx ->
+    compile "com.badlogicgames.gdx:gdx:1.9.12"
+    compile "com.badlogicgames.gdx:gdx-backend-lwjgl3:1.9.12"
+    compile "com.badlogicgames.gdx:gdx-platform:1.9.12:natives-desktop"
+
+    //squidlib ->
+    compile group: 'com.squidpony', name: 'squidlib-util', version: '3.0.3'
+    compile group: 'com.squidpony', name: 'squidlib', version: '3.0.3'
+
+    //rest ->
+    compile "com.kotcrab.vis:vis-ui:1.4.6"
+    compile "org.projectlombok:lombok:1.18.10"
+    annotationProcessor 'org.projectlombok:lombok:1.18.10'
+}
+
+
+//use with generatePomFileForMavenPublication task. Or create pom file similar to some libgdx lib
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'com.java'
+            artifactId = 'worldgen'
+            version = '1.0-SNAPSHOT'
+
+            from components.java
+        }
+    }
+}
+
+/*
+task run(type: JavaExec) {
+    main = "worldgen"
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+    workingDir = new File("../assets")
+    ignoreExitValue = true
+}
+*/
