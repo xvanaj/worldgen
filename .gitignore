@@ -3,3 +3,5 @@
 */build/
 /html/war/
 /core/assets-tmp/
+/build/tmp/jar/
+/build/libs/

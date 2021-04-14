@@ -1,0 +1,33 @@
+buildscript {
+    repositories {
+        maven {
+            url 'https://plugins.gradle.org/m2/'
+        }
+    }
+
+    dependencies {
+        classpath "io.freefair.gradle:aspectj-plugin:5.3.3.3"
+
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+apply plugin: "io.freefair.aspectj.post-compile-weaving"
+compileJava.ajc.options.compilerArgs += "-showWeaveInfo"
+compileJava.ajc.options.compilerArgs += "-verbose"
+
+//use with generatePomFileForMavenPublication task. Or create pom file similar to some libgdx lib
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'com.java'
+            artifactId = 'worldgen'
+            version = '1.0-SNAPSHOT'
+
+            from components.java
+        }
+    }
+}
