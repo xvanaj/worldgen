@@ -1,0 +1,53 @@
+sourceSets.main.java.srcDirs = ["src/"]
+sourceSets.main.resources.srcDirs = ["../core/assets"]
+
+project.ext.mainClassName = "com.mygdx.game.desktop.DesktopLauncher"
+project.ext.assetsDir = new File("../core/assets")
+
+task run(dependsOn: classes, type: JavaExec) {
+    main = project.mainClassName
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+    workingDir = project.assetsDir
+    ignoreExitValue = true
+}
+
+configurations {
+    compile.exclude module: 'html'
+   //all*.exclude group: 'org.gradle.test.excludes', module: 'reports'
+}
+
+task dist(type: Jar) {
+    manifest {
+        attributes 'Main-Class': project.mainClassName
+    }
+/*    configurations.compileClasspath.exclude module: 'html'
+
+    dependsOn configurations.compileClasspath
+    from {
+        configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }*/
+    with jar
+}
+/*
+apply plugin: 'application'
+
+run {
+    workingDir = rootProject.file('assets').path
+    setIgnoreExitValue(true)
+
+    if (OperatingSystem.current() == OperatingSystem.MAC_OS) {
+        // Required to run LWJGL3 Java apps on MacOS
+        jvmArgs += "-XstartOnFirstThread"
+    }
+}
+jar {
+    archiveBaseName.set(appName)
+    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    manifest {
+        attributes 'Main-Class': project.mainClassName
+    }
+}
+*/
+
+dist.dependsOn classes

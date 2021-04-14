@@ -1,0 +1,138 @@
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'org.gretty:gretty:3.0.2'
+    }
+}
+
+sourceCompatibility = 11
+
+apply plugin: "gwt"
+apply plugin: "war"
+apply plugin: "org.gretty"
+
+gwt {
+    gwtVersion='2.9.0' // Should match the gwt version used for building the gwt backend
+    maxHeapSize="2G" // Default 256m is not enough for gwt compiler. GWT is HUNGRY
+    minHeapSize="1G"
+    logLevel = 'DEBUG'
+    src = files(file("src/main/java")) // Needs to be in front of "modules" below.
+    modules 'com.mygdx.game.GdxDefinition'
+    devModules 'com.mygdx.game.GdxDefinitionSuperdev'
+    project.webAppDirName = 'webapp'
+
+    compiler {
+        strict = true;
+        disableCastChecking = true;
+        sourceLevel = 1.11
+    }
+    sourceLevel = 1.11
+}
+
+dependencies {
+    implementation (project(":core")) {
+        exclude group: 'gradle.plugin.aspectj'
+    }
+    compile "com.badlogicgames.gdx:gdx:$gdxVersion:sources"
+    compile "com.kotcrab.vis:vis-ui:$visUiVersion:sources"
+
+    //collisions
+    implementation 'com.github.tommyettinger:jbump:v1.0.1:sources'
+
+    implementation "com.github.tommyettinger:gdx-backend-gwt:1.912.0"
+    implementation "com.github.tommyettinger:gdx-backend-gwt:1.912.0:sources"
+/*    implementation 'com.github.tommyettinger.gdx-backends:gdx-backend-gwt:master-SNAPSHOT'
+    implementation 'com.github.tommyettinger.gdx-backends:gdx-backend-gwt:master-SNAPSHOT:sources'*/
+
+    implementation "com.github.SquidPony.SquidLib:squidlib-util:$squidLibUtilVersion:sources"
+    // above depends on this:
+    implementation "com.github.tommyettinger:regexodus:$regExodusVersion:sources"
+
+    implementation "com.github.SquidPony.SquidLib:squidlib:$squidLibVersion:sources"
+    // above depends on this:
+    implementation "com.github.tommyettinger:anim8-gdx:$anim8Version:sources"
+
+    implementation "gradle.plugin.org.wisepersist:gwt-gradle-plugin:$gwtPluginVersion"
+
+}
+
+apply plugin: "org.wisepersist.gwt"
+
+import org.wisepersist.gradle.plugins.gwt.GwtSuperDev
+import org.akhikhl.gretty.AppBeforeIntegrationTestTask
+
+gretty.httpPort = 8080
+gretty.resourceBase = project.buildDir.path + "\\gwt\\draftOut"
+gretty.contextPath = "\\"
+gretty.portPropertiesFileName = "TEMP_PORTS.properties"
+
+task startHttpServer () {
+    dependsOn draftCompileGwt
+
+    doFirst {
+        def currentJvm = org.gradle.internal.jvm.Jvm.current()
+        println currentJvm
+
+        copy {
+            from "webapp"
+            into gretty.resourceBase
+        }
+
+        copy {
+            from "war"
+            into gretty.resourceBase
+        }
+    }
+}
+
+task beforeRun(type: AppBeforeIntegrationTestTask, dependsOn: startHttpServer) {
+    // The next line allows ports to be reused instead of
+    // needing a process to be manually terminated.
+    file("build/TEMP_PORTS.properties").delete()
+    // Somewhat of a hack; uses Gretty's support for wrapping a task in
+    // a start and then stop of a Jetty server that serves files while
+    // also running the SuperDev code server.
+    integrationTestTask 'superDev'
+
+    interactive false
+}
+
+task superDev (type: GwtSuperDev) {
+    //dependsOn startHttpServer
+    doFirst {
+        gwt.compiler.style = org.wisepersist.gradle.plugins.gwt.Style.DETAILED
+        gwt.modules = gwt.devModules
+    }
+}
+
+task dist(dependsOn: [clean, compileGwt]) {
+    doLast {
+        file("build/dist").mkdirs()
+        copy {
+            from "build/gwt/out"
+            into "build/dist"
+        }
+        copy {
+            from "webapp"
+            into "build/dist"
+            }
+        copy {
+            from "war"
+            into "build/dist"
+        }
+    }
+}
+
+task addSource {
+    doLast {
+        sourceSets.main.compileClasspath += files(project(':core').sourceSets.main.allJava.srcDirs)
+    }
+}
+
+tasks.compileGwt.dependsOn(addSource)
+tasks.draftCompileGwt.dependsOn(addSource)
+
+sourceSets.main.java.srcDirs = [ "src/main/java" ]
